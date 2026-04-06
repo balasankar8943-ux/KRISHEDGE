@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KrishEdge — Empowering Indian Farmers</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #2C1A0E; --harvest: #E8A020;
+    --leaf: #4A7C3F; --leaf-light: #6AAE5E;
+    --cream: #F5EDD8; --white: #FDFAF5; --muted: #8B7355;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--white); color: var(--soil); overflow-x: hidden; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 5%;
+    background: rgba(253,250,245,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(44,26,14,0.08);
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; color: var(--soil); }
+  .logo span { color: var(--leaf); }
+  .nav-right { display: flex; align-items: center; gap: 1.2rem; }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { text-decoration: none; color: var(--muted); font-size: 0.88rem; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--soil); }
+
+  /* LANGUAGE SELECTOR */
+  .lang-wrapper { position: relative; }
+  .lang-btn {
+    display: flex; align-items: center; gap: 0.45rem;
+    background: rgba(74,124,63,0.1); border: 1.5px solid rgba(74,124,63,0.25);
+    color: var(--leaf); padding: 0.42rem 0.95rem;
+    border-radius: 50px; font-size: 0.8rem; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .lang-btn:hover { background: rgba(74,124,63,0.18); }
+  .lang-btn .arrow { font-size: 0.55rem; transition: transform 0.2s; }
+  .lang-btn.open .arrow { transform: rotate(180deg); }
+
+  .lang-dropdown {
+    display: none; position: absolute; top: calc(100% + 10px); right: 0;
+    background: white; border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(44,26,14,0.15);
+    border: 1px solid rgba(44,26,14,0.08);
+    width: 290px; max-height: 400px; overflow-y: auto; z-index: 300; padding: 0.5rem;
+  }
+  .lang-dropdown.show { display: block; animation: dropIn 0.2s ease; }
+  @keyframes dropIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+  .lang-search-box {
+    width: 100%; padding: 0.55rem 0.85rem;
+    border: 1px solid rgba(44,26,14,0.12); border-radius: 10px;
+    font-size: 0.83rem; font-family: 'DM Sans', sans-serif;
+    outline: none; margin-bottom: 0.4rem; color: var(--soil);
+  }
+  .lang-search-box:focus { border-color: var(--leaf); }
+
+  .lang-option {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.55rem 0.8rem; border-radius: 10px;
+    cursor: pointer; transition: background 0.15s; font-size: 0.86rem;
+  }
+  .lang-option:hover { background: rgba(74,124,63,0.08); }
+  .lang-option.active { background: rgba(74,124,63,0.12); color: var(--leaf); font-weight: 500; }
+  .lang-native { font-size: 0.78rem; color: var(--muted); }
+  .lang-option.active .lang-native { color: var(--leaf-light); }
+
+  /* TRANSLATING TOAST */
+  .trans-toast {
+    display: none; position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--soil); color: var(--cream);
+    padding: 0.65rem 1.6rem; border-radius: 50px;
+    font-size: 0.83rem; z-index: 500;
+    box-shadow: 0 8px 30px rgba(44,26,14,0.3);
+    align-items: center; gap: 0.65rem;
+  }
+  .trans-toast.show { display: flex; }
+  .spinner { width: 15px; height: 15px; border: 2px solid rgba(245,237,216,0.25); border-top-color: var(--harvest); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink:0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .nav-cta {
+    background: var(--leaf); color: white; border: none;
+    padding: 0.52rem 1.2rem; border-radius: 50px; font-size: 0.83rem;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer;
+    transition: background 0.2s, transform 0.2s; white-space: nowrap;
+  }
+  .nav-cta:hover { background: var(--leaf-light); transform: translateY(-1px); }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    display: grid; grid-template-columns: 1fr 1fr;
+    align-items: center; padding: 8rem 5% 5rem; position: relative; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 70% at 80% 50%, rgba(74,124,63,0.09) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(232,160,32,0.07) 0%, transparent 60%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; z-index: 0;
+    background-image: linear-gradient(rgba(44,26,14,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(44,26,14,0.03) 1px,transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-tag {
+    display: inline-block; background: rgba(74,124,63,0.12); color: var(--leaf);
+    font-size: 0.73rem; font-weight: 500; padding: 0.38rem 0.95rem; border-radius: 50px;
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.5rem;
+    opacity: 0; animation: fadeUp 0.6s 0.2s forwards;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem,4.5vw,3.9rem); font-weight: 900;
+    line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem;
+    opacity: 0; animation: fadeUp 0.7s 0.35s forwards;
+  }
+  h1 em { font-style: normal; color: var(--leaf); }
+  .hero-sub {
+    font-size: 1rem; color: var(--muted); line-height: 1.7;
+    max-width: 480px; margin-bottom: 2.5rem; font-weight: 300;
+    opacity: 0; animation: fadeUp 0.7s 0.5s forwards;
+  }
+  .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.7s 0.65s forwards; }
+  .btn-primary {
+    background: var(--soil); color: var(--cream); border: none;
+    padding: 0.82rem 1.9rem; border-radius: 50px; font-size: 0.93rem;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .btn-primary:hover { background: #3d2510; transform: translateY(-2px); }
+  .btn-outline {
+    background: transparent; color: var(--soil); border: 1.5px solid rgba(44,26,14,0.25);
+    padding: 0.82rem 1.9rem; border-radius: 50px; font-size: 0.93rem;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--soil); transform: translateY(-2px); }
+
+  /* HERO VISUAL */
+  .hero-visual {
+    position: relative; z-index: 1;
+    display: flex; justify-content: center; align-items: center;
+    opacity: 0; animation: fadeIn 1s 0.8s forwards;
+  }
+  .hero-cards { position: relative; width: 340px; height: 380px; }
+  .hcard { position: absolute; border-radius: 20px; padding: 1.4rem; box-shadow: 0 8px 40px rgba(44,26,14,0.1); border: 1px solid rgba(44,26,14,0.07); }
+  .hcard-main { background: var(--soil); color: var(--cream); width: 270px; top: 40px; left: 25px; z-index: 3; animation: float 4s ease-in-out infinite; }
+  .hcard-main .lbl { font-size: 0.65rem; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+  .hcard-main .val { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 900; line-height: 1; margin-bottom: 0.3rem; }
+  .hcard-main .sub { font-size: 0.75rem; opacity: 0.6; }
+  .hcard-stat { background: white; width: 158px; }
+  .hcard-stat.s1 { bottom: 45px; right: 0; z-index: 4; animation: float 4s 1.2s ease-in-out infinite; }
+  .hcard-stat.s2 { top: 5px; right: 10px; z-index: 4; animation: float 4s 2.4s ease-in-out infinite; }
+  .hcard-stat .sn { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; color: var(--soil); }
+  .hcard-stat .sl { font-size: 0.7rem; color: var(--muted); margin-top: 0.12rem; }
+  .dot-pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--leaf-light); margin-right: 4px; animation: pulse 2s infinite; }
+
+  /* STATS BAR */
+  .stats-bar { background: var(--soil); padding: 2.5rem 5%; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 1.5rem; }
+  .stat-item { text-align: center; color: var(--cream); }
+  .stat-item .num { font-family: 'Playfair Display', serif; font-size: 2.1rem; font-weight: 900; color: var(--harvest); display: block; }
+  .stat-item .txt { font-size: 0.78rem; opacity: 0.62; margin-top: 0.2rem; }
+
+  /* SECTIONS */
+  section { padding: 6rem 5%; }
+  .sec-tag { display: inline-block; background: rgba(74,124,63,0.1); color: var(--leaf); font-size: 0.72rem; font-weight: 500; padding: 0.33rem 0.82rem; border-radius: 50px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1rem; }
+  .sec-title { font-family: 'Playfair Display', serif; font-size: clamp(1.85rem,3vw,2.6rem); font-weight: 900; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 1rem; }
+  .sec-sub { font-size: 0.95rem; color: var(--muted); line-height: 1.7; max-width: 520px; font-weight: 300; }
+
+  /* FEATURES */
+  #features { background: var(--cream); }
+  .features-hdr { margin-bottom: 3.5rem; }
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 1.3rem; }
+  .fcard { background: white; border-radius: 20px; padding: 1.9rem; border: 1px solid rgba(44,26,14,0.07); transition: transform 0.3s, box-shadow 0.3s; position: relative; overflow: hidden; }
+  .fcard::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--leaf),var(--harvest)); transform:scaleX(0); transform-origin:left; transition:transform 0.3s; }
+  .fcard:hover { transform: translateY(-5px); box-shadow: 0 18px 50px rgba(44,26,14,0.11); }
+  .fcard:hover::before { transform: scaleX(1); }
+  .ficon { width: 48px; height: 48px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 1.45rem; margin-bottom: 1.2rem; }
+  .ficon.g { background: rgba(74,124,63,0.12); }
+  .ficon.a { background: rgba(232,160,32,0.12); }
+  .ficon.b { background: rgba(70,150,220,0.1); }
+  .ficon.r { background: rgba(210,70,55,0.1); }
+  .ftitle { font-family: 'Playfair Display', serif; font-size: 1.18rem; font-weight: 700; margin-bottom: 0.55rem; }
+  .fdesc { font-size: 0.87rem; color: var(--muted); line-height: 1.65; }
+  .fbadge { display:inline-block; margin-top:1rem; font-size:0.68rem; font-weight:500; padding:0.2rem 0.62rem; border-radius:50px; background:rgba(74,124,63,0.1); color:var(--leaf); }
+
+  /* ABOUT */
+  #about { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+  .about-vis { position: relative; }
+  .about-box { width:100%; aspect-ratio:4/5; border-radius:24px; background:linear-gradient(135deg,var(--leaf) 0%,var(--soil) 100%); display:flex; align-items:center; justify-content:center; font-size:8rem; }
+  .about-badge { position:absolute; bottom:-18px; right:-18px; background:var(--harvest); color:var(--soil); border-radius:16px; padding:1.1rem 1.4rem; box-shadow:0 8px 28px rgba(232,160,32,0.35); }
+  .about-badge .big { font-family:'Playfair Display',serif; font-size:1.85rem; font-weight:900; display:block; line-height:1; }
+  .about-badge .sm { font-size:0.7rem; font-weight:500; opacity:0.8; }
+  .about-txt .sec-sub { margin-bottom: 2rem; }
+  .chklist { list-style:none; display:flex; flex-direction:column; gap:0.8rem; }
+  .chklist li { display:flex; align-items:flex-start; gap:0.72rem; font-size:0.88rem; color:var(--muted); line-height:1.5; }
+  .chklist li::before { content:'✓'; background:rgba(74,124,63,0.12); color:var(--leaf); width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.62rem; flex-shrink:0; margin-top:2px; }
+
+  /* CONTACT */
+  #contact { background:var(--soil); color:var(--cream); text-align:center; padding:7rem 5%; position:relative; overflow:hidden; }
+  #contact::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 50% 60% at 20% 50%,rgba(74,124,63,0.2) 0%,transparent 60%),radial-gradient(ellipse 40% 50% at 80% 50%,rgba(232,160,32,0.1) 0%,transparent 60%); }
+  .contact-in { position:relative; z-index:1; max-width:580px; margin:0 auto; }
+  #contact .sec-tag { background:rgba(255,255,255,0.1); color:var(--harvest); }
+  #contact .sec-title { color:var(--cream); }
+  #contact .sec-sub { color:rgba(245,237,216,0.6); max-width:100%; margin:0 auto 2.5rem; }
+  .cform { display:flex; flex-direction:column; gap:0.95rem; max-width:440px; margin:0 auto; }
+  .cform input,.cform textarea { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:0.85rem 1.1rem; color:var(--cream); font-family:'DM Sans',sans-serif; font-size:0.88rem; outline:none; transition:border-color 0.2s; }
+  .cform input::placeholder,.cform textarea::placeholder { color:rgba(245,237,216,0.35); }
+  .cform input:focus,.cform textarea:focus { border-color:var(--harvest); }
+  .cform textarea { resize:vertical; min-height:100px; }
+  .btn-harvest { background:var(--harvest); color:var(--soil); border:none; padding:0.88rem; border-radius:12px; font-size:0.92rem; font-family:'DM Sans',sans-serif; font-weight:600; cursor:pointer; transition:background 0.2s,transform 0.2s; }
+  .btn-harvest:hover { background:#f0b030; transform:translateY(-2px); }
+
+  footer { background:#180c04; color:rgba(245,237,216,0.45); text-align:center; padding:2rem; font-size:0.78rem; }
+  footer span { color:var(--harvest); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);} }
+  @keyframes fadeIn { from{opacity:0;}to{opacity:1;} }
+  @keyframes float { 0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);} }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);} }
+  .reveal { opacity:0; transform:translateY(28px); transition:opacity 0.7s,transform 0.7s; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  @media(max-width:768px){
+    #hero{grid-template-columns:1fr;}
+    .hero-visual{display:none;}
+    #about{grid-template-columns:1fr;}
+    .about-vis{display:none;}
+    .nav-links{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Krish<span>Edge</span></div>
+  <ul class="nav-links">
+    <li><a href="#features" data-i18n="nav_platform">Platform</a></li>
+    <li><a href="#about" data-i18n="nav_about">About</a></li>
+    <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="lang-wrapper">
+      <button class="lang-btn" id="langBtn">
+        🌐 <span id="langLabel">English</span> <span class="arrow">▼</span>
+      </button>
+      <div class="lang-dropdown" id="langDropdown">
+        <input class="lang-search-box" type="text" id="langSearch" placeholder="Search language / भाषा खोजें...">
+        <div id="langList"></div>
+      </div>
+    </div>
+    <button class="nav-cta" data-i18n="nav_cta">Get Early Access</button>
+  </div>
+</nav>
+
+<div class="trans-toast" id="transToast">
+  <div class="spinner"></div>
+  <span id="transMsg">Translating...</span>
+</div>
+
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-tag" data-i18n="hero_tag">🌱 Agritech for Bharat</div>
+    <h1 data-i18n="hero_h1">Farming's <em>digital</em><br>backbone — built<br>for India</h1>
+    <p class="hero-sub" data-i18n="hero_sub">KrishEdge connects farmers with machinery, labour, and markets — while building the financial identity that unlocks credit, subsidies, and growth.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" data-i18n="hero_btn1">Explore Platform →</button>
+      <button class="btn-outline" data-i18n="hero_btn2">Watch Demo</button>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-cards">
+      <div class="hcard hcard-main">
+        <div class="lbl">Active Farmers</div>
+        <div class="val">12,400+</div>
+        <div class="sub"><span class="dot-pulse"></span>Live across Kerala</div>
+      </div>
+      <div class="hcard hcard-stat s2">
+        <div class="sn">₹2.1Cr</div>
+        <div class="sl">Transactions facilitated</div>
+      </div>
+      <div class="hcard hcard-stat s1">
+        <div class="sn">94%</div>
+        <div class="sl">Farmer satisfaction</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar reveal">
+  <div class="stat-item"><span class="num">3</span><div class="txt" data-i18n="stat1">Core Platform Modules</div></div>
+  <div class="stat-item"><span class="num">22</span><div class="txt" data-i18n="stat2">Indian Languages Supported</div></div>
+  <div class="stat-item"><span class="num">₹0</span><div class="txt" data-i18n="stat3">Commission on First Booking</div></div>
+  <div class="stat-item"><span class="num">PSL</span><div class="txt" data-i18n="stat4">Bank Credit Pathway</div></div>
+</div>
+
+<section id="features">
+  <div class="features-hdr reveal">
+    <div class="sec-tag" data-i18n="feat_tag">Our Platform</div>
+    <h2 class="sec-title" data-i18n="feat_title">Three modules. One farming ecosystem.</h2>
+    <p class="sec-sub" data-i18n="feat_sub">Every tool a farmer needs — machinery rental, labour hiring, direct market access, and credit building — in one unified platform.</p>
+  </div>
+  <div class="features-grid">
+    <div class="fcard reveal">
+      <div class="ficon g">🚜</div>
+      <div class="ftitle" data-i18n="f1_title">AgriRent</div>
+      <p class="fdesc" data-i18n="f1_desc">Rent tractors, harvesters, and farm equipment from nearby owners. No middlemen — transparent pricing, instant booking.</p>
+      <span class="fbadge" data-i18n="f1_badge">Machinery Rental</span>
+    </div>
+    <div class="fcard reveal">
+      <div class="ficon a">👷</div>
+      <div class="ftitle" data-i18n="f2_title">LaborLink</div>
+      <p class="fdesc" data-i18n="f2_desc">Connect with skilled agricultural workers for harvesting, planting, and field operations. Verified, rated, and locally sourced.</p>
+      <span class="fbadge" data-i18n="f2_badge">Labour Marketplace</span>
+    </div>
+    <div class="fcard reveal">
+      <div class="ficon b">🛒</div>
+      <div class="ftitle" data-i18n="f3_title">KrishMarket</div>
+      <p class="fdesc" data-i18n="f3_desc">Sell produce directly to buyers, retailers, and restaurants. Bypass middlemen, get fair prices, build long-term trade relationships.</p>
+      <span class="fbadge" data-i18n="f3_badge">Direct Market Access</span>
+    </div>
+    <div class="fcard reveal">
+      <div class="ficon r">💳</div>
+      <div class="ftitle" data-i18n="f4_title">KrishCredit</div>
+      <p class="fdesc" data-i18n="f4_desc">Every transaction on KrishEdge builds your financial profile — a CIBIL-proxy that connects you to PSL bank loans and government schemes.</p>
+      <span class="fbadge" data-i18n="f4_badge">Fintech Layer</span>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="about-vis reveal">
+    <div class="about-box">🌾</div>
+    <div class="about-badge">
+      <span class="big">YIP 8.0</span>
+      <div class="sm">District Winner 🏆</div>
+    </div>
+  </div>
+  <div class="about-txt reveal">
+    <div class="sec-tag" data-i18n="about_tag">About KrishEdge</div>
+    <h2 class="sec-title" data-i18n="about_title">Built from the fields of Pathanamthitta</h2>
+    <p class="sec-sub" data-i18n="about_sub">KrishEdge was born out of a simple observation — Indian farmers are skilled, hard-working, and underserved by technology. We're changing that with ground-up, hyperlocal tools that work in every language and on every phone.</p>
+    <ul class="chklist">
+      <li data-i18n="ab1">Hyperlocal trust-building in rural Kerala</li>
+      <li data-i18n="ab2">Partnered with Krishi Bhavans and NABARD</li>
+      <li data-i18n="ab3">Supported by KSUM and YIP 8.0</li>
+      <li data-i18n="ab4">Works in all 22 scheduled Indian languages</li>
+      <li data-i18n="ab5">No smartphone required — WhatsApp & IVR support</li>
+    </ul>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="contact-in">
+    <div class="sec-tag" data-i18n="contact_tag">Get In Touch</div>
+    <h2 class="sec-title" data-i18n="contact_title">Ready to bring KrishEdge to your village?</h2>
+    <p class="sec-sub" data-i18n="contact_sub">Whether you're a farmer, investor, NGO, or government body — we'd love to collaborate. Reach out and let's grow together.</p>
+    <div class="cform">
+      <input type="text" data-i18n-ph="cf_name" placeholder="Your Name">
+      <input type="text" data-i18n-ph="cf_phone" placeholder="Phone / WhatsApp Number">
+      <textarea data-i18n-ph="cf_msg" placeholder="Tell us about your interest..."></textarea>
+      <button class="btn-harvest" data-i18n="cf_btn">Send Message →</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 <span>KrishEdge</span> · Built with ❤️ in Kerala, India · <span>Team Luxton</span></p>
+</footer>
+
+<script>
+const LANGUAGES = [
+  {code:'en',   name:'English',   native:'English'},
+  {code:'hi',   name:'Hindi',     native:'हिन्दी'},
+  {code:'bn',   name:'Bengali',   native:'বাংলা'},
+  {code:'te',   name:'Telugu',    native:'తెలుగు'},
+  {code:'mr',   name:'Marathi',   native:'मराठी'},
+  {code:'ta',   name:'Tamil',     native:'தமிழ்'},
+  {code:'ur',   name:'Urdu',      native:'اردو'},
+  {code:'gu',   name:'Gujarati',  native:'ગુજરાતી'},
+  {code:'kn',   name:'Kannada',   native:'ಕನ್ನಡ'},
+  {code:'ml',   name:'Malayalam', native:'മലയാളം'},
+  {code:'or',   name:'Odia',      native:'ଓଡ଼ିଆ'},
+  {code:'pa',   name:'Punjabi',   native:'ਪੰਜਾਬੀ'},
+  {code:'as',   name:'Assamese',  native:'অসমীয়া'},
+  {code:'mai',  name:'Maithili',  native:'मैथिली'},
+  {code:'sa',   name:'Sanskrit',  native:'संस्कृत'},
+  {code:'ks',   name:'Kashmiri',  native:'کٲشُر'},
+  {code:'ne',   name:'Nepali',    native:'नेपाली'},
+  {code:'sd',   name:'Sindhi',    native:'سنڌي'},
+  {code:'kok',  name:'Konkani',   native:'कोंकणी'},
+  {code:'mni',  name:'Manipuri',  native:'মৈতৈলোন্'},
+  {code:'brx',  name:'Bodo',      native:'बड़ो'},
+  {code:'sat',  name:'Santali',   native:'ᱥᱟᱱᱛᱟᱲᱤ'},
+  {code:'doi',  name:'Dogri',     native:'डोगरी'},
+];
+
+const BASE = {
+  nav_platform:"Platform", nav_about:"About", nav_contact:"Contact", nav_cta:"Get Early Access",
+  hero_tag:"🌱 Agritech for Bharat",
+  hero_h1:"Farming's digital backbone — built for India",
+  hero_sub:"KrishEdge connects farmers with machinery, labour, and markets — while building the financial identity that unlocks credit, subsidies, and growth.",
+  hero_btn1:"Explore Platform →", hero_btn2:"Watch Demo",
+  stat1:"Core Platform Modules", stat2:"Indian Languages Supported", stat3:"Commission on First Booking", stat4:"Bank Credit Pathway",
+  feat_tag:"Our Platform", feat_title:"Three modules. One farming ecosystem.",
+  feat_sub:"Every tool a farmer needs — machinery rental, labour hiring, direct market access, and credit building — in one unified platform.",
+  f1_title:"AgriRent", f1_desc:"Rent tractors, harvesters, and farm equipment from nearby owners. No middlemen — transparent pricing, instant booking.", f1_badge:"Machinery Rental",
+  f2_title:"LaborLink", f2_desc:"Connect with skilled agricultural workers for harvesting, planting, and field operations. Verified, rated, and locally sourced.", f2_badge:"Labour Marketplace",
+  f3_title:"KrishMarket", f3_desc:"Sell produce directly to buyers, retailers, and restaurants. Bypass middlemen, get fair prices, build long-term trade relationships.", f3_badge:"Direct Market Access",
+  f4_title:"KrishCredit", f4_desc:"Every transaction on KrishEdge builds your financial profile — a CIBIL-proxy that connects you to PSL bank loans and government schemes.", f4_badge:"Fintech Layer",
+  about_tag:"About KrishEdge", about_title:"Built from the fields of Pathanamthitta",
+  about_sub:"KrishEdge was born out of a simple observation — Indian farmers are skilled, hard-working, and underserved by technology. We're changing that with ground-up, hyperlocal tools that work in every language and on every phone.",
+  ab1:"Hyperlocal trust-building in rural Kerala", ab2:"Partnered with Krishi Bhavans and NABARD",
+  ab3:"Supported by KSUM and YIP 8.0", ab4:"Works in all 22 scheduled Indian languages",
+  ab5:"No smartphone required — WhatsApp & IVR support",
+  contact_tag:"Get In Touch", contact_title:"Ready to bring KrishEdge to your village?",
+  contact_sub:"Whether you're a farmer, investor, NGO, or government body — we'd love to collaborate. Reach out and let's grow together.",
+  cf_name:"Your Name", cf_phone:"Phone / WhatsApp Number", cf_msg:"Tell us about your interest...", cf_btn:"Send Message →"
+};
+
+let currentLang = 'en';
+const cache = {en: BASE};
+
+function renderList(filter='') {
+  const el = document.getElementById('langList');
+  el.innerHTML = '';
+  LANGUAGES.filter(l =>
+    l.name.toLowerCase().includes(filter.toLowerCase()) ||
+    l.native.includes(filter)
+  ).forEach(l => {
+    const d = document.createElement('div');
+    d.className = 'lang-option' + (l.code===currentLang?' active':'');
+    d.innerHTML = `<span>${l.name}</span><span class="lang-native">${l.native}</span>`;
+    d.onclick = () => pick(l);
+    el.appendChild(d);
+  });
+}
+
+const btn = document.getElementById('langBtn');
+const dd = document.getElementById('langDropdown');
+btn.addEventListener('click', e => {
+  e.stopPropagation();
+  const open = dd.classList.toggle('show');
+  btn.classList.toggle('open', open);
+  if (open) { document.getElementById('langSearch').value=''; renderList(); setTimeout(()=>document.getElementById('langSearch').focus(),50); }
+});
+document.addEventListener('click', ()=>{ dd.classList.remove('show'); btn.classList.remove('open'); });
+dd.addEventListener('click', e=>e.stopPropagation());
+document.getElementById('langSearch').addEventListener('input', e=>renderList(e.target.value));
+
+async function pick(lang) {
+  dd.classList.remove('show'); btn.classList.remove('open');
+  if (lang.code===currentLang) return;
+  currentLang = lang.code;
+  document.getElementById('langLabel').textContent = lang.name;
+  if (cache[lang.code]) { apply(cache[lang.code]); return; }
+  if (lang.code==='en') { apply(BASE); return; }
+  await translate(lang);
+}
+
+async function translate(lang) {
+  const toast = document.getElementById('transToast');
+  document.getElementById('transMsg').textContent = `Translating to ${lang.name} (${lang.native})...`;
+  toast.classList.add('show');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        messages:[{role:'user', content:`You are a professional translator for Indian regional languages.
+Translate the JSON values below from English to ${lang.name} (${lang.native}).
+
+STRICT RULES:
+- Keep all JSON keys EXACTLY as-is
+- Never translate these brand/proper nouns: KrishEdge, AgriRent, LaborLink, KrishMarket, KrishCredit, NABARD, KSUM, CIBIL, PSL, YIP 8.0, Kerala, Pathanamthitta, Bharat, WhatsApp, IVR
+- Keep emojis exactly as-is (🌱 → 🌱)
+- Keep arrows exactly as-is (→ stays →)
+- Keep numbers and currency symbols as-is (₹, %)
+- Return ONLY valid JSON — no markdown, no backticks, no explanation
+
+JSON:
+${JSON.stringify(BASE)}`}]
+      })
+    });
+    const data = await res.json();
+    const raw = (data.content||[]).map(c=>c.text||'').join('');
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    cache[lang.code] = parsed;
+    apply(parsed);
+  } catch(e) {
+    console.error(e);
+    apply(BASE); // fallback
+  } finally {
+    toast.classList.remove('show');
+  }
+}
+
+function apply(content) {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (!content[k]) return;
+    if (el.tagName==='H1'||el.tagName==='H2') {
+      el.innerHTML = content[k];
+    } else {
+      el.textContent = content[k];
+    }
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const k = el.getAttribute('data-i18n-ph');
+    if (content[k]) el.placeholder = content[k];
+  });
+}
+
+const obs = new IntersectionObserver(entries => entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+renderList();
+</script>
+</body>
+</html>
